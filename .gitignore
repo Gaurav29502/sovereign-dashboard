@@ -36,7 +36,6 @@ bower_components
 .lock-wscript
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
-build/Release
 
 # Dependency directories
 node_modules/
@@ -136,7 +135,6 @@ dist
 /coverage
 
 # production
-/build
 
 # misc
 .DS_Store
