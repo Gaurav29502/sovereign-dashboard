@@ -21,7 +21,8 @@ export const Dashboard = ({ header }) => {
   const [discountAmount, setDiscountAmount] = useState("");
   const [netAmount, setNetAmount] = useState("");
   const [customer, setCustomer] = useState("");
-  const [parties, setParties] = useState([]);
+  const [parties, setParties] = useState([{value:'5', label:'Metropol'}]);
+  const [types, setTypes] = useState([{value:'MQ-B', label:'MQ-B'}]);
   const [gross, setGross] = useState("");
   const [details, setDetails] = useState("");
   const [ok, setOk] = useState(false);
@@ -169,12 +170,10 @@ export const Dashboard = ({ header }) => {
 
   const handleTypeChange = (typeInput) => {
     setType(typeInput);
-    console.log(typeInput);
   };
 
   const handlePartyChange = (partyInput) => {
     setCustomer(partyInput);
-    console.log(partyInput);
   };
 
   const handleRowClick = (rowData) => {
@@ -190,8 +189,7 @@ export const Dashboard = ({ header }) => {
           value: party.PartyId,
           label: party.PartyName,
         }));
-        setParties(transformedParties);
-        console.log(parties);
+        // setParties(transformedParties);
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -352,7 +350,7 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Type</p>
               <Dropdown
-                options={parties}
+                options={types}
                 height="8vh"
                 onSelectChange={(value) => {handleTypeChange(value)}}
                 title={selectedRow ? selectedRow.type : type}
