@@ -273,11 +273,6 @@ export const Dashboard = ({ header }) => {
         selectedRow.BillDate === BillDate ? selectedRow.BillDate : BillDate,
     };
 
-    toast.success("Practice Data Sent to Eedee.", {
-      autoClose: 5000,
-      position: "top-center",
-    });
-
     axios
       .post("http://103.197.221.123:5005/AddPurchase", updateData)
       .then((response) => {
@@ -348,6 +343,7 @@ export const Dashboard = ({ header }) => {
             </div>
             <div className="rowsWrapper">
               {purchases.map((purchase, index) => {
+                const partyName = parties.find(party => party.value === purchase.PartyId)?.label || 'Unknown Party';
                 return (
                   <div
                     onClick={() => handleRowClick(purchase)}
@@ -369,7 +365,7 @@ export const Dashboard = ({ header }) => {
                     </p>
                     <p className="tableRowText">{purchase.DiscountAmt}</p>
                     <p className="tableRowText">{purchase.NetAmount}</p>
-                    <p className="tableRowText">{purchase.PartyId}</p>
+                    <p className="tableRowText">{partyName}</p>
                     <p className="tableRowText">{purchase.ParcelWeight}</p>
                     <p className="tableRowText">{purchase.Details}</p>
                     <p className="tableRowText">{formatDateToDDMMYY(purchase.BillDate)}</p>
