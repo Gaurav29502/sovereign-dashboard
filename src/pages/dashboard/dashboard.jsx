@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import "./dashboard.css";
 import { toast } from "react-toastify";
@@ -10,6 +10,7 @@ import axios from "axios";
 
 export const Dashboard = ({ header }) => {
   const [addEntryModal, setAddEntryModal] = useState(false);
+  const [updateModal, setUpdateModal] = useState(false);
   const [EntryDate, setEntryDate] = useState("");
   const [BillingCarats, setBillingCarats] = useState("");
   const [Type, setType] = useState("");
@@ -32,6 +33,8 @@ export const Dashboard = ({ header }) => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [BillDate, setBillDate] = useState("");
   const [purchases, setPurchases] = useState([]);
+  const [updateEntryDateType, setUpdateEntryDateType] = useState("text");
+  const [updateBillDateType, setUpdateBillDateType] = useState("text");
 
   const handleTypeChange = (typeInput) => {
     setType(typeInput);
@@ -59,7 +62,7 @@ export const Dashboard = ({ header }) => {
     setBilled(rowData.Billed);
     setBillNo(rowData.BillNo);
     setBillDate(rowData.BillDate);
-    setAddEntryModal(true);
+    setUpdateModal(true);
   };
 
   const getParty = () => {
@@ -125,8 +128,8 @@ export const Dashboard = ({ header }) => {
     const discountInputValue = e.target.value;
     setDiscountPerc(discountInputValue);
 
-    const parsedPrice = parseFloat(selectedRow.Rate);
-    const parsedCarats = parseFloat(selectedRow.BillingCarats);
+    const parsedPrice = parseFloat(Rate);
+    const parsedCarats = parseFloat(BillingCarats);
     const parsedDiscountPercentage = parseFloat(discountInputValue);
 
     const calculatedAmount = parsedPrice * parsedCarats;
@@ -144,24 +147,21 @@ export const Dashboard = ({ header }) => {
   };
 
   const handleCloseModal = () => {
-    setEntryDate("");
-    setBillingCarats("");
-    setType("");
-    setSize("");
-    setColor("");
-    setRate("");
-    setAmount("");
-    setDiscountPerc("");
-    setDiscountAmt("");
-    setNetAmount("");
-    setPartyId("");
-    setParcelWeight("");
-    setDetails("");
-    setBilled(false);
-    setBillNo("");
-    setBillDate("");
     setAddEntryModal(false);
     setSelectedRow(null);
+  };
+
+  const handleCloseUpdateModal = () => {
+    setUpdateModal(false);
+    setDetails("");
+    setAmount("");
+    setDiscountAmt("");
+    setNetAmount("");
+    setRate("");
+    setBillingCarats("");
+    setSelectedRow(null);
+    setUpdateEntryDateType("text");
+    setUpdateBillDateType("text");
   };
 
   useEffect(() => {
@@ -197,21 +197,7 @@ export const Dashboard = ({ header }) => {
       BillDate: BillDate,
     };
 
-    if (
-      EntryDate &&
-      BillingCarats &&
-      Type &&
-      Size &&
-      Color &&
-      Rate &&
-      Amount &&
-      DiscountPerc &&
-      DiscountAmt &&
-      NetAmount &&
-      PartyId &&
-      ParcelWeight &&
-      Details
-    ) {
+    if (EntryDate && ParcelWeight) {
       axios
         .post("http://103.197.221.123:5005/AddPurchase", insertData)
         .then((response) => {
@@ -281,8 +267,7 @@ export const Dashboard = ({ header }) => {
           position: "top-center",
         });
         getPurchases();
-
-        setAddEntryModal(false);
+        setUpdateModal(false);
       })
       .catch((error) => {
         toast.error("Error Updating Purchase", {
@@ -322,54 +307,113 @@ export const Dashboard = ({ header }) => {
         <div className="tableWrapper">
           <div className="table">
             <div className="headerRow">
-              <p className="rowHeader">SR NO</p>
-              <p className="rowHeader">DATE</p>
-              <p className="rowHeader">CARATS</p>
-              <p className="rowHeader">TYPE</p>
-              <p className="rowHeader">SIZE</p>
-              <p className="rowHeader">COLOR</p>
-              <p className="rowHeader">PRICE</p>
-              <p className="rowHeader">AMOUNT</p>
+              <p className="rowHeader" style={{ width: "5vw" }}>
+                SR NO
+              </p>
+              <p className="rowHeader" style={{ width: "5vw" }}>
+                DATE
+              </p>
+              <p className="rowHeader" style={{ width: "6vw" }}>
+                CARATS
+              </p>
+              <p className="rowHeader" style={{ width: "6vw" }}>
+                TYPE
+              </p>
+              <p className="rowHeader" style={{ width: "7vw" }}>
+                SIZE
+              </p>
+              <p className="rowHeader" style={{ width: "7vw" }}>
+                COLOR
+              </p>
+              <p className="rowHeader" style={{ width: "7vw" }}>
+                PRICE
+              </p>
+              <p className="rowHeader" style={{ width: "7vw" }}>
+                AMOUNT
+              </p>
               <p className="rowHeader" style={{ width: "15vw" }}>
                 DISCOUNT PERCENTAGE
               </p>
-              <p className="rowHeader">DISCOUNT AMOUNT</p>
-              <p className="rowHeader">NET AMOUNT</p>
-              <p className="rowHeader">PARTY</p>
-              <p className="rowHeader">GROSS</p>
-              <p className="rowHeader">DETAILS</p>
-              <p className="rowHeader">BILL DATE</p>
-              <p className="rowHeader">BILLED</p>
+              <p className="rowHeader" style={{ width: "10vw" }}>
+                DISCOUNT AMOUNT
+              </p>
+              <p className="rowHeader" style={{ width: "10vw" }}>
+                NET AMOUNT
+              </p>
+              <p className="rowHeader" style={{ width: "10vw" }}>
+                PARTY
+              </p>
+              <p className="rowHeader" style={{ width: "7vw" }}>
+                GROSS
+              </p>
+              <p className="rowHeader" style={{ width: "10vw" }}>
+                DETAILS
+              </p>
+              <p className="rowHeader" style={{ width: "5vw" }}>
+                BILL DATE
+              </p>
+              <p className="rowHeader" style={{ width: "5vw" }}>
+                BILLED
+              </p>
             </div>
+
             <div className="rowsWrapper">
               {purchases.map((purchase, index) => {
-                const partyName = parties.find(party => party.value === purchase.PartyId)?.label || 'Unknown Party';
+                const partyName =
+                  parties.find((party) => party.value === purchase.PartyId)
+                    ?.label || "Unknown Party";
                 return (
                   <div
                     onClick={() => handleRowClick(purchase)}
                     className="tableRow"
                     key={index}
                   >
-                    <p className="tableRowText">{purchase.PurchaseId}</p>
-                    <p className="tableRowText">
+                    <p className="tableRowText" style={{ width: "5vw" }}>
+                      {purchase.PurchaseId}
+                    </p>
+                    <p className="tableRowText" style={{ width: "5vw" }}>
                       {formatDateToDDMMYY(purchase.EntryDate)}
                     </p>
-                    <p className="tableRowText">{purchase.BillingCarats}</p>
-                    <p className="tableRowText">{purchase.Type}</p>
-                    <p className="tableRowText">{purchase.Size}</p>
-                    <p className="tableRowText">{purchase.Color}</p>
-                    <p className="tableRowText">{purchase.Rate}</p>
-                    <p className="tableRowText">{purchase.Amount}</p>
+                    <p className="tableRowText" style={{ width: "6vw" }}>
+                      {purchase.BillingCarats}
+                    </p>
+                    <p className="tableRowText" style={{ width: "6vw" }}>
+                      {purchase.Type}
+                    </p>
+                    <p className="tableRowText" style={{ width: "7vw" }}>
+                      {purchase.Size}
+                    </p>
+                    <p className="tableRowText" style={{ width: "7vw" }}>
+                      {purchase.Color}
+                    </p>
+                    <p className="tableRowText" style={{ width: "7vw" }}>
+                      {purchase.Rate}
+                    </p>
+                    <p className="tableRowText" style={{ width: "7vw" }}>
+                      {purchase.Amount}
+                    </p>
                     <p className="tableRowText" style={{ width: "15vw" }}>
                       {purchase.DiscountPerc} %
                     </p>
-                    <p className="tableRowText">{purchase.DiscountAmt}</p>
-                    <p className="tableRowText">{purchase.NetAmount}</p>
-                    <p className="tableRowText">{partyName}</p>
-                    <p className="tableRowText">{purchase.ParcelWeight}</p>
-                    <p className="tableRowText">{purchase.Details}</p>
-                    <p className="tableRowText">{formatDateToDDMMYY(purchase.BillDate)}</p>
-                    <div className="tableRowText">
+                    <p className="tableRowText" style={{ width: "10vw" }}>
+                      {purchase.DiscountAmt}
+                    </p>
+                    <p className="tableRowText" style={{ width: "10vw" }}>
+                      {purchase.NetAmount}
+                    </p>
+                    <p className="tableRowText" style={{ width: "10vw" }}>
+                      {partyName}
+                    </p>
+                    <p className="tableRowText" style={{ width: "7vw" }}>
+                      {purchase.ParcelWeight}
+                    </p>
+                    <p className="tableRowText" style={{ width: "10vw" }}>
+                      {purchase.Details}
+                    </p>
+                    <p className="tableRowText" style={{ width: "5vw" }}>
+                      {formatDateToDDMMYY(purchase.BillDate)}
+                    </p>
+                    <div className="tableRowText" style={{ width: "5vw" }}>
                       {purchase.Billed ? (
                         <span
                           className="material-symbols-rounded"
@@ -396,7 +440,7 @@ export const Dashboard = ({ header }) => {
       <Modal
         size="xlarge"
         isOpen={addEntryModal}
-        header={selectedRow ? "Update Purchase" : "New Purchase"}
+        header={"New Purchase"}
         onClose={handleCloseModal}
       >
         <div className="addPurchaseDiv">
@@ -407,8 +451,8 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Date</p>
               <input
-                defaultValue={selectedRow ? selectedRow.EntryDate : EntryDate}
-                type={selectedRow ? "text" : "date"}
+                id="entryDate"
+                type="date"
                 placeholder="Enter Date"
                 className="entryInput"
                 onChange={(e) => {
@@ -422,9 +466,7 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Parcel Weight</p>
               <input
-                defaultValue={
-                  selectedRow ? selectedRow.ParcelWeight : ParcelWeight
-                }
+                id="parcelWeight"
                 placeholder="Enter Parcel Weight"
                 className="entryInput"
                 onChange={(e) => {
@@ -454,9 +496,7 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Billing Carats</p>
               <input
-                defaultValue={
-                  selectedRow ? selectedRow.BillingCarats : BillingCarats
-                }
+                id="carats"
                 placeholder="Enter Billing Carats"
                 className="entryInput"
                 onChange={(e) => {
@@ -486,7 +526,7 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Price</p>
               <input
-                defaultValue={selectedRow ? selectedRow.Rate : Rate}
+                id="rate"
                 placeholder="Enter Price"
                 className="entryInput"
                 onChange={(e) => {
@@ -502,7 +542,7 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Color</p>
               <input
-                defaultValue={selectedRow ? selectedRow.Color : Color}
+                id="color"
                 placeholder="Enter Color"
                 className="entryInput"
                 onChange={(e) => {
@@ -516,9 +556,7 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Amount</p>
               <input
-                defaultValue={
-                  selectedRow ? selectedRow.Amount : Rate * BillingCarats
-                }
+                id="amount"
                 value={Rate * BillingCarats}
                 className="entryInput"
                 disabled
@@ -532,7 +570,7 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Size</p>
               <input
-                defaultValue={selectedRow ? selectedRow.Size : Size}
+                id="size"
                 placeholder="Enter Size"
                 className="entryInput"
                 onChange={(e) => {
@@ -546,15 +584,11 @@ export const Dashboard = ({ header }) => {
             >
               <p className="entryLabels">Discount Percentage</p>
               <input
-                defaultValue={
-                  selectedRow ? selectedRow.DiscountPerc : DiscountPerc
-                }
+                id="perc"
                 placeholder="Enter Discount Percentage"
                 className="entryInput"
                 onChange={(e) => {
-                  selectedRow
-                    ? handleCalculateDiscountUpdate(e)
-                    : handleCalculateDiscount(e);
+                  handleCalculateDiscount(e);
                 }}
               />
             </div>
@@ -591,9 +625,8 @@ export const Dashboard = ({ header }) => {
               >
                 <p className="entryLabels">Discount Amount</p>
                 <input
-                  defaultValue={
-                    selectedRow ? selectedRow.DiscountAmt : DiscountAmt
-                  }
+                  id="discAmt"
+                  defaultValue={DiscountAmt}
                   className="entryInput"
                   disabled
                 />
@@ -604,7 +637,8 @@ export const Dashboard = ({ header }) => {
               >
                 <p className="entryLabels">Net Amount</p>
                 <input
-                  defaultValue={selectedRow ? selectedRow.NetAmount : NetAmount}
+                  id="netAmt"
+                  defaultValue={NetAmount}
                   className="entryInput"
                   disabled
                 />
@@ -612,46 +646,6 @@ export const Dashboard = ({ header }) => {
             </div>
           </div>
           <div className="entryInputRow" style={{ display: "flex" }}>
-            {selectedRow && (
-              <>
-                <div
-                  className="entryInputDiv"
-                  style={{ width: "22%", height: "100%" }}
-                >
-                  <div
-                    style={{
-                      height: "90%",
-                      width: "100%",
-                      display: "grid",
-                      gridAutoFlow: "column",
-                      placeItems: "center",
-                    }}
-                  >
-                    <label
-                      className="entryLabels"
-                      style={{
-                        display: "flex",
-                        gap: "1vh",
-                        alignItems: "center",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedRowOk}
-                        onChange={() => handleSelectedRowBilled()}
-                        disabled={selectedRow.Billed}
-                        style={{
-                          height: "4vh",
-                          width: "1.3vw",
-                          backgroundColor: "#624FC2",
-                        }}
-                      />
-                      Billed
-                    </label>
-                  </div>
-                </div>
-              </>
-            )}
             {selectedRow === null && (
               <div
                 className="entryInputDiv"
@@ -675,6 +669,7 @@ export const Dashboard = ({ header }) => {
                     }}
                   >
                     <input
+                      id="billed2"
                       type="checkbox"
                       checked={Billed}
                       onChange={() => setBilled(!Billed)}
@@ -686,45 +681,6 @@ export const Dashboard = ({ header }) => {
                     />
                     Billed
                   </label>
-                </div>
-              </div>
-            )}
-            {selectedRow && selectedRowOk && !selectedRow.Billed && (
-              <div
-                style={{
-                  height: "100%",
-                  width: "70%",
-                  display: "flex",
-                  gap: "4vh",
-                }}
-              >
-                <div
-                  className="entryInputDiv"
-                  style={{ width: "70%", height: "100%" }}
-                >
-                  <p className="entryLabels">Bill Number</p>
-                  <input
-                    defaultValue={selectedRow ? selectedRow.BillNo : BillNo}
-                    placeholder="Enter Bill Number"
-                    className="entryInput"
-                    onChange={(e) => {
-                      setBillNo(e.target.value);
-                    }}
-                  />
-                </div>
-                <div
-                  className="entryInputDiv"
-                  style={{ width: "70%", height: "100%" }}
-                >
-                  <p className="entryLabels">Bill Date</p>
-                  <input
-                    type={"date"}
-                    defaultValue={selectedRow ? selectedRow.BillDate : BillDate}
-                    className="entryInput"
-                    onChange={(e) => {
-                      setBillDate(e.target.value);
-                    }}
-                  />
                 </div>
               </div>
             )}
@@ -743,7 +699,7 @@ export const Dashboard = ({ header }) => {
                 >
                   <p className="entryLabels">Bill Number</p>
                   <input
-                    defaultValue={selectedRow ? selectedRow.BillNo : BillNo}
+                    id="billNo2"
                     placeholder="Enter Bill Number"
                     className="entryInput"
                     onChange={(e) => {
@@ -757,49 +713,8 @@ export const Dashboard = ({ header }) => {
                 >
                   <p className="entryLabels">Bill Date</p>
                   <input
+                    id="billDate2"
                     type={selectedRow ? "text" : "date"}
-                    defaultValue={selectedRow ? selectedRow.BillDate : BillDate}
-                    className="entryInput"
-                    onChange={(e) => {
-                      setBillDate(e.target.value);
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-            {selectedRow && selectedRow.Billed && (
-              <div
-                style={{
-                  height: "100%",
-                  width: "70%",
-                  display: "flex",
-                  gap: "4vh",
-                }}
-              >
-                <div
-                  className="entryInputDiv"
-                  style={{ width: "70%", height: "100%" }}
-                >
-                  <p className="entryLabels">Bill Number</p>
-                  <input
-                    defaultValue={selectedRow ? selectedRow.BillNo : BillNo}
-                    placeholder="Enter Bill Number"
-                    className="entryInput"
-                    disabled={selectedRow.Billed}
-                    onChange={(e) => {
-                      setBillNo(e.target.value);
-                    }}
-                  />
-                </div>
-                <div
-                  className="entryInputDiv"
-                  style={{ width: "70%", height: "100%" }}
-                >
-                  <p className="entryLabels">Bill Date</p>
-                  <input
-                    type={selectedRow.Billed ? "text" : "date"}
-                    disabled={selectedRow.Billed}
-                    defaultValue={selectedRow ? selectedRow.BillDate : BillDate}
                     className="entryInput"
                     onChange={(e) => {
                       setBillDate(e.target.value);
@@ -812,9 +727,7 @@ export const Dashboard = ({ header }) => {
 
           <button
             className="newPurchaseButton"
-            onClick={() =>
-              selectedRow ? handleUpdatePurchase() : handleAddPurchase()
-            }
+            onClick={() => handleAddPurchase()}
             style={{
               width: "25%",
               height: "5vh",
@@ -822,10 +735,399 @@ export const Dashboard = ({ header }) => {
                 selectedRow && selectedRow.Billed === true ? "0vh" : "2vh",
             }}
           >
-            {selectedRow ? "Update Purchase" : "Confirm Purchase"}
+            Confirm Purchase
           </button>
         </div>
       </Modal>
+      {selectedRow && (
+        <Modal
+          size="xlarge"
+          isOpen={updateModal}
+          header={"Update Purchase"}
+          onClose={handleCloseUpdateModal}
+        >
+          <div className="addPurchaseDiv">
+            <div className="entryInputRow">
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Date</p>
+                <input
+                  id="entryDate"
+                  defaultValue={formatDateToDDMMYY(selectedRow.EntryDate)}
+                  type={updateEntryDateType}
+                  onClick={() => setUpdateEntryDateType("date")}
+                  placeholder="Enter Date"
+                  className="entryInput"
+                  onChange={(e) => {
+                    setEntryDate(e.target.value);
+                  }}
+                />
+              </div>
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Parcel Weight</p>
+                <input
+                  id="parcelWeight"
+                  defaultValue={
+                    selectedRow ? selectedRow.ParcelWeight : ParcelWeight
+                  }
+                  placeholder="Enter Parcel Weight"
+                  className="entryInput"
+                  onChange={(e) => {
+                    setParcelWeight(e.target.value);
+                  }}
+                />
+              </div>
+            </div>
+            <div className="entryInputRow">
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Party Name</p>
+                <Dropdown
+                  options={parties}
+                  height="8vh"
+                  onSelectChange={(value) => {
+                    handlePartyChange(value);
+                  }}
+                  title={
+                    selectedRow
+                      ? parties.find(
+                          (party) => party.value === selectedRow.PartyId
+                        )?.label
+                      : ""
+                  }
+                />
+              </div>
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Billing Carats</p>
+                <input
+                  id="carats"
+                  defaultValue={
+                    selectedRow ? selectedRow.BillingCarats : BillingCarats
+                  }
+                  placeholder="Enter Billing Carats"
+                  className="entryInput"
+                  onChange={(e) => {
+                    setBillingCarats(e.target.value);
+                  }}
+                />
+              </div>
+            </div>
+            <div className="entryInputRow">
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Type</p>
+                <Dropdown
+                  options={types}
+                  height="8vh"
+                  onSelectChange={(value) => {
+                    handleTypeChange(value);
+                  }}
+                  title={selectedRow ? selectedRow.Type : Type}
+                />
+              </div>
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Price</p>
+                <input
+                  id="rate"
+                  defaultValue={selectedRow ? selectedRow.Rate : Rate}
+                  placeholder="Enter Price"
+                  className="entryInput"
+                  onChange={(e) => {
+                    setRate(e.target.value);
+                  }}
+                />
+              </div>
+            </div>
+            <div className="entryInputRow">
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Color</p>
+                <input
+                  id="color"
+                  defaultValue={selectedRow ? selectedRow.Color : Color}
+                  placeholder="Enter Color"
+                  className="entryInput"
+                  onChange={(e) => {
+                    setColor(e.target.value);
+                  }}
+                />
+              </div>
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Amount</p>
+                <input
+                  id="amount"
+                  defaultValue={
+                    selectedRow ? selectedRow.Amount : Rate * BillingCarats
+                  }
+                  value={Rate * BillingCarats}
+                  className="entryInput"
+                  disabled
+                />
+              </div>
+            </div>
+            <div className="entryInputRow">
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Size</p>
+                <input
+                  id="size"
+                  defaultValue={selectedRow ? selectedRow.Size : Size}
+                  placeholder="Enter Size"
+                  className="entryInput"
+                  onChange={(e) => {
+                    setSize(e.target.value);
+                  }}
+                />
+              </div>
+              <div
+                className="entryInputDiv"
+                style={{ width: "70%", height: "100%" }}
+              >
+                <p className="entryLabels">Discount Percentage</p>
+                <input
+                  id="perc"
+                  defaultValue={
+                    selectedRow ? selectedRow.DiscountPerc : DiscountPerc
+                  }
+                  placeholder="Enter Discount Percentage"
+                  className="entryInput"
+                  onChange={(e) => {
+                    handleCalculateDiscountUpdate(e);
+                  }}
+                />
+              </div>
+            </div>
+            <div className="entryInputRow">
+              <div style={{ height: "100%", width: "70%" }}>
+                <div
+                  className="entryInputDiv"
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  <p className="entryLabels">Details</p>
+                  <textarea
+                    defaultValue={selectedRow ? selectedRow.Details : Details}
+                    placeholder="Enter Details"
+                    className="entryInput"
+                    onChange={(e) => {
+                      setDetails(e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+              <div
+                style={{
+                  height: "100%",
+                  width: "70%",
+                  display: "grid",
+                  gridTemplateRows: "1fr 1fr",
+                  gap: "1vh",
+                }}
+              >
+                <div
+                  className="entryInputDiv"
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  <p className="entryLabels">Discount Amount</p>
+                  <input
+                    id="discAmt"
+                    value={DiscountAmt}
+                    defaultValue={
+                      selectedRow ? selectedRow.DiscountAmt : DiscountAmt
+                    }
+                    className="entryInput"
+                    disabled
+                  />
+                </div>
+                <div
+                  className="entryInputDiv"
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  <p className="entryLabels">Net Amount</p>
+                  <input
+                    id="netAmt"
+                    value={NetAmount}
+                    defaultValue={
+                      selectedRow ? selectedRow.NetAmount : NetAmount
+                    }
+                    className="entryInput"
+                    disabled
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="entryInputRow" style={{ display: "flex" }}>
+              {selectedRow && (
+                <>
+                  <div
+                    className="entryInputDiv"
+                    style={{ width: "22%", height: "100%" }}
+                  >
+                    <div
+                      style={{
+                        height: "90%",
+                        width: "100%",
+                        display: "grid",
+                        gridAutoFlow: "column",
+                        placeItems: "center",
+                      }}
+                    >
+                      <label
+                        className="entryLabels"
+                        style={{
+                          display: "flex",
+                          gap: "1vh",
+                          alignItems: "center",
+                        }}
+                      >
+                        <input
+                          id="billed1"
+                          type="checkbox"
+                          checked={selectedRowOk}
+                          onChange={() => handleSelectedRowBilled()}
+                          disabled={selectedRow.Billed}
+                          style={{
+                            height: "4vh",
+                            width: "1.3vw",
+                            backgroundColor: "#624FC2",
+                          }}
+                        />
+                        Billed
+                      </label>
+                    </div>
+                  </div>
+                </>
+              )}
+              {selectedRow && selectedRowOk && !selectedRow.Billed && (
+                <div
+                  style={{
+                    height: "100%",
+                    width: "70%",
+                    display: "flex",
+                    gap: "4vh",
+                  }}
+                >
+                  <div
+                    className="entryInputDiv"
+                    style={{ width: "70%", height: "100%" }}
+                  >
+                    <p className="entryLabels">Bill Number</p>
+                    <input
+                      id="billNo1"
+                      defaultValue={selectedRow ? selectedRow.BillNo : BillNo}
+                      placeholder="Enter Bill Number"
+                      className="entryInput"
+                      onChange={(e) => {
+                        setBillNo(e.target.value);
+                      }}
+                    />
+                  </div>
+                  <div
+                    className="entryInputDiv"
+                    style={{ width: "70%", height: "100%" }}
+                  >
+                    <p className="entryLabels">Bill Date</p>
+                    <input
+                      id="billDate1"
+                      type={"date"}
+                      defaultValue={
+                        selectedRow
+                          ? formatDateToDDMMYY(selectedRow.BillDate)
+                          : BillDate
+                      }
+                      className="entryInput"
+                      onChange={(e) => {
+                        setBillDate(e.target.value);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+              {selectedRow && selectedRow.Billed && (
+                <div
+                  style={{
+                    height: "100%",
+                    width: "70%",
+                    display: "flex",
+                    gap: "4vh",
+                  }}
+                >
+                  <div
+                    className="entryInputDiv"
+                    style={{ width: "70%", height: "100%" }}
+                  >
+                    <p className="entryLabels">Bill Number</p>
+                    <input
+                      id="billNo3"
+                      defaultValue={selectedRow ? selectedRow.BillNo : BillNo}
+                      placeholder="Enter Bill Number"
+                      className="entryInput"
+                      disabled={selectedRow.Billed}
+                      onChange={(e) => {
+                        setBillNo(e.target.value);
+                      }}
+                    />
+                  </div>
+                  <div
+                    className="entryInputDiv"
+                    style={{ width: "70%", height: "100%" }}
+                  >
+                    <p className="entryLabels">Bill Date</p>
+                    <input
+                      id="billDate3"
+                      type={updateBillDateType}
+                      disabled={selectedRow.Billed}
+                      defaultValue={
+                        selectedRow
+                          ? formatDateToDDMMYY(selectedRow.BillDate)
+                          : BillDate
+                      }
+                      className="entryInput"
+                      onChange={(e) => {
+                        setBillDate(e.target.value);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="newPurchaseButton"
+              onClick={() => handleUpdatePurchase()}
+              style={{
+                width: "25%",
+                height: "5vh",
+                marginTop:
+                  selectedRow && selectedRow.Billed === true ? "0vh" : "2vh",
+              }}
+            >
+              Update Purchase
+            </button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 };
